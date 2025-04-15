@@ -31,4 +31,12 @@ class ProductPolicy
         }
         return false;
     }
+
+    public function delete(User $user, Product $product)
+{
+    if ($user->email == 'reno@gmail.com') {
+        return true;
+    }
+    return false;
+}
 }

@@ -25,6 +25,8 @@ Route::controller(ProductController::class)->group(function() {
     Route::middleware('auth')->group(function() {
         Route::match(['get', 'post'], '/product/create', 'create')->can('create_product', App\Models\Product::class)->name('product-create');
         Route::match(['get', 'post'], '/product/{id}/edit', 'edit')->name('product-edit');
+           Route::delete('/product/{id}/delete', 'delete')
+            ->name('product-delete');
     });
 });
 
@@ -37,3 +39,6 @@ Route::controller(CartController::class)->group(function() {
 });
 
 Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+Route::get('/reviews/{review}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');
+Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
+Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');

@@ -84,4 +84,18 @@ class ProductController extends Controller
             'product' => $product
         ]);
     }
+
+    public function delete(string $id)
+    {
+        $product = Product::findOrFail($id);
+
+        // Hapus dulu semua gambar terkait
+        ProductImage::where('product_id', $id)->delete();
+
+        // Baru hapus produk
+        $product->delete();
+
+        // Return ke halaman utama dengan pesan sukses
+        return redirect('/')->with('success', 'Product deleted successfully.');
+    }
 }

@@ -25,4 +25,42 @@ class ReviewController extends Controller
 
         return redirect()->route('catalog-detail', $product->id)->with('success', 'Review added successfully!');
     }
+    public function edit(Review $review)
+{
+    if (Auth::id() !== $review->user_id) {
+        abort(403); // Forbidden
+    }
+
+    return view('reviews.edit', compact('review'));
+}
+public function update(Request $request, Review $review)
+{
+    if (Auth::id() !== $review->user_id) {
+        abort(403);
+    }
+
+    $request->validate([
+        'rating' => 'required|integer|min:1|max:5',
+        'comment' => 'required|string|max:1000',
+    ]);
+
+    $review->update([
+        'rating' => $request->rating,
+        'comment' => $request->comment,
+    ]);
+
+    return redirect()->route('catalog-detail', $review->product_id)->with('success', 'Review updated!');
+}
+public function destroy(Review $review)
+{
+    if (Auth::id() !== $review->user_id) {
+        abort(403);
+    }
+
+    $review->delete();
+
+    return redirect()->route('catalog-detail', $review->product_id)->with('success', 'Review deleted!');
+}
+
+
 }

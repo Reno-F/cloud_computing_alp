@@ -50,46 +50,84 @@
 
                 <!-- Review Section -->
                 <section>
-                    <h4>Reviews</h4>
                     @foreach($product->reviews as $review)
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <strong>{{ $review->user->name }}</strong>
-                                    <span class="text-muted">{{ $review->created_at->format('d M Y') }}</span>
-                                </div>
-                                <div>
-                                    @for ($i = 0; $i < 5; $i++)
-                                        <i class="fa {{ $i < $review->rating ? 'fa-star' : 'fa-star-o' }}" aria-hidden="true"></i>
-                                    @endfor
-                                </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ $review->user->name }}</strong>
+                                <span class="text-muted">{{ $review->created_at->format('d M Y') }}</span>
                             </div>
-                            <p>{{ $review->comment }}</p>
+                            <div>
+                                @for ($i = 0; $i < 5; $i++)
+                                    <i class="fa {{ $i < $review->rating ? 'fa-star' : 'fa-star-o' }}" aria-hidden="true"></i>
+                                @endfor
+                            </div>
                         </div>
-                    @endforeach
-                </section>
+                        <p>{{ $review->comment }}</p>
 
+                        {{-- Tombol edit & delete jika review ini milik user yang sedang login --}}
+                        @auth
+                            @if (Auth::id() === $review->user_id)
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url()->current() }}?edit={{ $review->id }}" class="btn btn-sm btn-warning">Edit</a>
+
+                                    <form action="{{ route('reviews.destroy', $review->id) }}" method="POST" onsubmit="return confirm('Yakin mau hapus review ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            @endif
+                        @endauth
+
+                    </div>
+                @endforeach
+                </section>
+                @php
+                $editingReview = null;
+
+                if (request()->has('edit')) {
+                    $editingReview = $product->reviews->where('id', request()->get('edit'))->first();
+                    // Tambahan keamanan: pastikan hanya user pemilik yang bisa edit
+                    if ($editingReview && $editingReview->user_id !== Auth::id()) {
+                        $editingReview = null;
+                    }
+                }
+            @endphp
                 @auth
                 <section class="mt-4">
-                    <h4>Add a Review</h4>
-                    <form action="{{ route('reviews.store', $product->id) }}" method="POST">
+                    <h4>{{ $editingReview ? 'Edit Your Review' : 'Add a Review' }}</h4>
+                    <form action="{{ $editingReview ? route('reviews.update', $editingReview->id) : route('reviews.store', $product->id) }}" method="POST">
                         @csrf
+                        @if ($editingReview)
+                            @method('PUT')
+                        @endif
+
                         <div class="mb-3">
                             <label for="rating" class="form-label">Rating</label>
                             <select class="form-control" id="rating" name="rating" required>
-                                <option value="5">5 - Excellent</option>
-                                <option value="4">4 - Good</option>
-                                <option value="3">3 - Average</option>
-                                <option value="2">2 - Poor</option>
-                                <option value="1">1 - Terrible</option>
+                                @for ($i = 5; $i >= 1; $i--)
+                                    <option value="{{ $i }}" {{ (old('rating', $editingReview->rating ?? '') == $i) ? 'selected' : '' }}>
+                                        {{ $i }} - {{ ['Terrible','Poor','Average','Good','Excellent'][$i-1] }}
+                                    </option>
+                                @endfor
                             </select>
                         </div>
+
                         <div class="mb-3">
                             <label for="comment" class="form-label">Comment</label>
-                            <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                            <textarea class="form-control" id="comment" name="comment" rows="3" required>{{ old('comment', $editingReview->comment ?? '') }}</textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary">Submit Review</button>
+
+                        <button type="submit" class="btn btn-primary">
+                            {{ $editingReview ? 'Update Review' : 'Submit Review' }}
+                        </button>
+
+                        @if($editingReview)
+                            <a href="{{ url()->current() }}" class="btn btn-secondary ms-2">Cancel</a>
+                        @endif
                     </form>
+
                 </section>
                 @endauth
             </div>
@@ -103,5 +141,14 @@
             Edit product
         </a>
     </div>
+    @endcan
+    @can('delete', $product)
+
+    <form action="{{ route('product-delete', $product->id) }}" method="POST">
+        @csrf
+        @method('DELETE')
+        <button class="btn btn-danger" type="submit">Hapus</button>
+    </form>
+
     @endcan
 </x-template>
